@@ -2,7 +2,7 @@
 name=ProxiVec
 qgisMinimumVersion=3.22
 description=QGIS plugin for raster proximity analysis from vector targets with automatic CRS reprojection to a projected working CRS.
-version=0.1.0
+version=1.0.0
 author=Arif K Wijayanto, Divisi Analisis Lingkungan dan Geospasial Modeling, IPB University
 email=akwijayanto@apps.ipb.ac.id
 about=Rasterize filtered target vector features into a projected working CRS, then generate a proximity raster in meters similar to the Proximity tool.
@@ -11,3 +11,13 @@ icon=icon.png
 experimental=False
 deprecated=False
 hasProcessingProvider=False
+
+changelog=
+  0.1.0 - First release
+    - Generate proximity (distance) raster (GeoTIFF) from a target vector layer
+    - Output distances in meters (projected working CRS + georeferenced distance units)
+    - Auto working CRS selection (Project CRS → Target CRS → Auto UTM → EPSG:3857 fallback)
+    - Analysis extent options: target extent, canvas extent, extent from layer, polygon bounding box (optionally selected-only)
+    - Target filtering: expression and selected features only
+    - Optional max distance and auto-load output raster into the project
+    - Progress panel (status text + progress bar)
