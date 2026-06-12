@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ProxiVecDialogBase</class>
+ <widget class="QDialog" name="ProxiVecDialogBase">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>560</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>ProxiVec - Raster Proximity</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="titleLabel">
+     <property name="text">
+      <string>Create a proximity raster from a target vector layer using a projected working CRS so distances are in meters.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QFormLayout" name="formLayout">
+     <item row="0" column="0">
+      <widget class="QLabel" name="targetLayerLabel">
+       <property name="text">
+        <string>Target layer</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QComboBox" name="targetLayerCombo"/>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="targetExpressionLabel">
+       <property name="text">
+        <string>Target expression</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="targetExpressionEdit">
+       <property name="placeholderText">
+        <string>Example: "status" = 'active'</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="extentModeLabel">
+       <property name="text">
+        <string>Analysis extent</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="extentModeCombo">
+       <item>
+        <property name="text">
+         <string>Target layer extent</string>
+        </property>
+        <property name="userData" stdset="0">
+         <string>target</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Current canvas extent</string>
+        </property>
+        <property name="userData" stdset="0">
+         <string>canvas</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Calculate from layer extent</string>
+        </property>
+        <property name="userData" stdset="0">
+         <string>layer</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Use polygon layer (bounding box)</string>
+        </property>
+        <property name="userData" stdset="0">
+         <string>polygon</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="extentLayerLabel">
+       <property name="text">
+        <string>Extent layer</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QComboBox" name="extentLayerCombo"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="polygonLayerLabel">
+       <property name="text">
+        <string>Polygon extent layer</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="polygonExtentLayerCombo"/>
+     </item>
+     <item row="5" column="1">
+      <widget class="QCheckBox" name="extentUseSelectedCheck">
+       <property name="text">
+        <string>Use selected features only (vector layers)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="pixelSizeLabel">
+       <property name="text">
+        <string>Pixel size (meters)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <widget class="QDoubleSpinBox" name="pixelSizeSpin">
+       <property name="decimals">
+        <number>3</number>
+       </property>
+       <property name="minimum">
+        <double>0.001000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>1000000.000000000000000</double>
+       </property>
+       <property name="value">
+        <double>30.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="maxDistanceLabel">
+       <property name="text">
+        <string>Max distance (meters)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayoutMaxDistance">
+       <item>
+        <widget class="QCheckBox" name="maxDistanceCheck">
+         <property name="text">
+          <string>Limit</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QDoubleSpinBox" name="maxDistanceSpin">
+         <property name="decimals">
+          <number>3</number>
+         </property>
+         <property name="minimum">
+          <double>0.001000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000000.000000000000000</double>
+         </property>
+         <property name="value">
+          <double>1000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="outputPathLabel">
+       <property name="text">
+        <string>Output raster</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayoutOutputPath">
+       <item>
+        <widget class="QLineEdit" name="outputPathEdit">
+         <property name="placeholderText">
+          <string>Select output .tif</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="outputBrowseButton">
+         <property name="text">
+          <string>Browse...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="targetSelectedCheck">
+     <property name="text">
+      <string>Use selected features only (target layer)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="loadRasterCheckBox">
+     <property name="text">
+      <string>Load output raster into the project after completion</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="refreshButton">
+     <property name="text">
+      <string>Refresh layer list</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="extentHintLabel">
+     <property name="text">
+      <string>The analysis extent will follow the target layer extent after reprojection.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="crsGroupBox">
+     <property name="title">
+      <string>Working CRS</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QLabel" name="crsInfoLabel">
+        <property name="text">
+         <string>Select a target layer to preview the working CRS.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="progressGroupBox">
+     <property name="title">
+      <string>Progress</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <widget class="QLabel" name="progressLabel">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="minimum">
+         <number>0</number>
+        </property>
+        <property name="maximum">
+         <number>100</number>
+        </property>
+        <property name="value">
+         <number>0</number>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
