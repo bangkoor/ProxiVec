@@ -10,6 +10,8 @@ from qgis.core import (
     QgsMessageLog,
     QgsProcessingFeedback,
     QgsProject,
+    QgsSettings,
+    QgsVectorLayer,
     QgsWkbTypes,
 )
 
@@ -50,6 +52,8 @@ class ProgressBridge(QObject):
 
 class ProxiVecDialog(QDialog, FORM_CLASS):
     LOG_TAG = "ProxiVec"
+    SETTINGS_KEY_TARGET_DIR = "ProxiVec/lastTargetDir"
+    SETTINGS_KEY_OUTPUT_DIR = "ProxiVec/lastOutputDir"
     EXTENT_TARGET = "target"
     EXTENT_CANVAS = "canvas"
     EXTENT_LAYER = "layer"
@@ -75,6 +79,7 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
         self.maxDistanceCheck.toggled.connect(self.maxDistanceSpin.setEnabled)
         self.refreshButton.clicked.connect(self.refresh_layers)
         self.outputBrowseButton.clicked.connect(self.choose_output_path)
+        self.targetLayerBrowseButton.clicked.connect(self.choose_target_layer)
 
         self.progressGroupBox.setVisible(False)
         self.progressBar.setValue(0)
@@ -82,6 +87,9 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
         self.progressBridge = ProgressBridge()
         self.progressBridge.progressChanged.connect(self.progressBar.setValue)
         self.progressBridge.messageChanged.connect(self.progressLabel.setText)
+        browse_width = self.outputBrowseButton.sizeHint().width()
+        self.outputBrowseButton.setFixedWidth(browse_width)
+        self.targetLayerBrowseButton.setFixedWidth(browse_width)
 
         self.refresh_layers()
         self.maxDistanceSpin.setEnabled(self.maxDistanceCheck.isChecked())
@@ -212,14 +220,57 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
             run_button.setEnabled(True)
 
     def choose_output_path(self):
+        settings = QgsSettings()
+        default_dir = settings.value(
+            self.SETTINGS_KEY_OUTPUT_DIR,
+            self.outputPathEdit.text().strip() or os.path.expanduser("~"),
+            type=str,
+        )
+        if default_dir and os.path.isfile(default_dir):
+            default_dir = os.path.dirname(default_dir)
+
         output_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save proximity raster",
-            self.outputPathEdit.text().strip() or "proxivec_proximity.tif",
+            os.path.join(default_dir, "proxivec_proximity.tif"),
             "GeoTIFF (*.tif)",
         )
         if output_path:
             self.outputPathEdit.setText(output_path)
+            settings.setValue(self.SETTINGS_KEY_OUTPUT_DIR, os.path.dirname(output_path))
+
+    def choose_target_layer(self):
+        settings = QgsSettings()
+        default_dir = settings.value(
+            self.SETTINGS_KEY_TARGET_DIR,
+            os.path.expanduser("~"),
+            type=str,
+        )
+        if default_dir and os.path.isfile(default_dir):
+            default_dir = os.path.dirname(default_dir)
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open target vector layer",
+            default_dir,
+            "Vector data (*.gpkg *.shp *.geojson *.json *.kml *.sqlite *.tab *.gml *.dxf);;All files (*.*)",
+        )
+        if not file_path:
+            return
+
+        settings.setValue(self.SETTINGS_KEY_TARGET_DIR, os.path.dirname(file_path))
+        layer_name = os.path.splitext(os.path.basename(file_path))[0]
+        vector_layer = QgsVectorLayer(file_path, layer_name, "ogr")
+        if not vector_layer.isValid():
+            QMessageBox.warning(self, "ProxiVec", "Failed to open the selected vector layer.")
+            return
+
+        QgsProject.instance().addMapLayer(vector_layer)
+        self.refresh_layers()
+        layer_id = vector_layer.id()
+        index = self.targetLayerCombo.findData(layer_id)
+        if index >= 0:
+            self.targetLayerCombo.setCurrentIndex(index)
 
     def _extent_mode(self):
         idx = self.extentModeCombo.currentIndex()

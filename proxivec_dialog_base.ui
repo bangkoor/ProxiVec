@@ -34,7 +34,18 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QComboBox" name="targetLayerCombo"/>
+      <layout class="QHBoxLayout" name="horizontalLayoutTargetLayer">
+       <item>
+        <widget class="QComboBox" name="targetLayerCombo"/>
+       </item>
+       <item>
+        <widget class="QPushButton" name="targetLayerBrowseButton">
+         <property name="text">
+          <string>Browse...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="targetExpressionLabel">
@@ -248,6 +259,33 @@
        <widget class="QLabel" name="crsInfoLabel">
         <property name="text">
          <string>Select a target layer to preview the working CRS.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="helpGroupBox">
+     <property name="title">
+      <string>Help</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="QLabel" name="helpLabel">
+        <property name="text">
+         <string>Quick guide:
+- Select a target vector layer and optional filter.
+- Choose analysis extent (target/canvas/layer/polygon bbox).
+- Set pixel size and max distance in meters.
+- Save output as GeoTIFF and click Run.
+
+Notes:
+- Distance values are computed in meters.
+- If target CRS is geographic, ProxiVec reprojects to a projected working CRS.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
