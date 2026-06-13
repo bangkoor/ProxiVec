@@ -47,6 +47,7 @@ class ProximityEngine:
         analysis_extent=None,
         analysis_extent_crs=None,
         max_distance=None,
+        working_crs_override=None,
         log_initial_state=True,
     ):
         self.target_layer = target_layer
@@ -57,6 +58,7 @@ class ProximityEngine:
         self.analysis_extent = analysis_extent
         self.analysis_extent_crs = analysis_extent_crs
         self.max_distance = float(max_distance) if max_distance else None
+        self.working_crs_override = working_crs_override
 
         self.working_crs, self.working_crs_reason = self._resolve_working_crs()
         self.target_transform = QgsCoordinateTransform(
@@ -181,6 +183,9 @@ class ProximityEngine:
         return "\n".join(lines)
 
     def _resolve_working_crs(self):
+        if self._is_metric_projected(self.working_crs_override):
+            return self.working_crs_override, "using user-selected target CRS"
+
         project_crs = QgsProject.instance().crs()
         if self._is_metric_projected(project_crs):
             return project_crs, "using QGIS project CRS"

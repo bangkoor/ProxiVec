@@ -1,4 +1,5 @@
 import os
+import inspect
 
 from PyQt5 import uic
 from PyQt5.QtCore import QObject, Qt, pyqtSignal
@@ -6,6 +7,7 @@ from PyQt5.QtWidgets import QFileDialog, QDialog, QDialogButtonBox, QMessageBox
 
 from qgis.core import (
     Qgis,
+    QgsCoordinateReferenceSystem,
     QgsMapLayerType,
     QgsMessageLog,
     QgsProcessingFeedback,
@@ -14,6 +16,7 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
+from qgis.gui import QgsProjectionSelectionDialog
 
 from .output_writer import OutputWriter
 from .proximity_engine import ProximityEngine
@@ -54,15 +57,19 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
     LOG_TAG = "ProxiVec"
     SETTINGS_KEY_TARGET_DIR = "ProxiVec/lastTargetDir"
     SETTINGS_KEY_OUTPUT_DIR = "ProxiVec/lastOutputDir"
+    SETTINGS_KEY_TARGET_CRS = "ProxiVec/targetCrsAuthId"
     EXTENT_TARGET = "target"
     EXTENT_CANVAS = "canvas"
     EXTENT_LAYER = "layer"
     EXTENT_POLYGON = "polygon"
+    CRS_MODE_AUTO = 0
+    CRS_MODE_SELECTED = 1
 
     def __init__(self, iface, parent=None):
         super().__init__(parent or iface.mainWindow())
         self.iface = iface
         self.setupUi(self)
+        self.setWindowModality(Qt.NonModal)
 
         run_button = self.buttonBox.button(QDialogButtonBox.Ok)
         run_button.setText("Run")
@@ -80,6 +87,9 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
         self.refreshButton.clicked.connect(self.refresh_layers)
         self.outputBrowseButton.clicked.connect(self.choose_output_path)
         self.targetLayerBrowseButton.clicked.connect(self.choose_target_layer)
+        if self._has_target_crs_controls():
+            self.targetCrsModeCombo.currentIndexChanged.connect(self.update_target_crs_controls)
+            self.targetCrsBrowseButton.clicked.connect(self.choose_target_crs)
 
         self.progressGroupBox.setVisible(False)
         self.progressBar.setValue(0)
@@ -90,10 +100,17 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
         browse_width = self.outputBrowseButton.sizeHint().width()
         self.outputBrowseButton.setFixedWidth(browse_width)
         self.targetLayerBrowseButton.setFixedWidth(browse_width)
+        if self._has_target_crs_controls():
+            self.targetCrsBrowseButton.setFixedWidth(browse_width)
+        QgsProject.instance().layersAdded.connect(self.refresh_layers)
+        QgsProject.instance().layersRemoved.connect(self.refresh_layers)
 
         self.refresh_layers()
         self.maxDistanceSpin.setEnabled(self.maxDistanceCheck.isChecked())
+        self._load_saved_target_crs()
         self.update_extent_controls()
+        if self._has_target_crs_controls():
+            self.update_target_crs_controls()
 
     def refresh_layers(self):
         target_id = self.targetLayerCombo.currentData()
@@ -121,40 +138,41 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
         self.update_extent_controls()
 
     def update_working_crs_info(self):
-        target_layer = self._current_layer(self.targetLayerCombo)
+        input_layer = self._current_layer(self.targetLayerCombo)
 
         run_button = self.buttonBox.button(QDialogButtonBox.Ok)
-        run_button.setEnabled(target_layer is not None)
+        run_button.setEnabled(input_layer is not None)
 
-        if target_layer is None:
-            self.crsInfoLabel.setText("Select a target layer to preview the working CRS.")
+        if input_layer is None:
+            self.crsInfoLabel.setText("Select an input layer to preview the working CRS.")
             return
 
         try:
-            engine = ProximityEngine(
-                target_layer=target_layer,
+            engine = ProximityEngine(**self._engine_kwargs(
+                target_layer=input_layer,
                 pixel_size=max(self.pixelSizeSpin.value(), 1e-9),
                 output_path=self.outputPathEdit.text().strip() or os.path.join(
                     os.path.expanduser("~"), "proxivec_proximity.tif"
                 ),
+                working_crs_override=self._selected_target_crs(),
                 log_initial_state=False,
-            )
+            ))
             info_text = (
                 f"Working CRS: {engine._crs_label(engine.working_crs)}\n"
                 f"Reason: {engine.working_crs_reason}"
             )
             info_text += "\nDistance units: meters"
-            if target_layer.crs().isGeographic():
-                info_text += "\nGeographic target CRS will be reprojected to a projected working CRS."
+            if input_layer.crs().isGeographic():
+                info_text += "\nGeographic input CRS will be reprojected to a projected working CRS."
             self.crsInfoLabel.setText(info_text)
         except Exception as exc:
             self.crsInfoLabel.setText(f"Failed to resolve working CRS: {exc}")
 
     def run_analysis(self):
-        target_layer = self._current_layer(self.targetLayerCombo)
+        input_layer = self._current_layer(self.targetLayerCombo)
 
-        if target_layer is None:
-            QMessageBox.warning(self, "ProxiVec", "Target layer is required.")
+        if input_layer is None:
+            QMessageBox.warning(self, "ProxiVec", "Input layer is required.")
             return
 
         output_path = self.outputPathEdit.text().strip()
@@ -176,8 +194,8 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
         feedback = DialogFeedback(self.progressBridge)
         try:
             analysis_extent, analysis_extent_crs = self._selected_extent()
-            engine = ProximityEngine(
-                target_layer=target_layer,
+            engine = ProximityEngine(**self._engine_kwargs(
+                target_layer=input_layer,
                 target_expression=self.targetExpressionEdit.text(),
                 target_selected_only=self.targetSelectedCheck.isChecked(),
                 pixel_size=self.pixelSizeSpin.value(),
@@ -187,7 +205,8 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
                 max_distance=self.maxDistanceSpin.value()
                 if self.maxDistanceCheck.isChecked()
                 else None,
-            )
+                working_crs_override=self._selected_target_crs(),
+            ))
             self.update_working_crs_info()
 
             result = engine.compute(feedback=feedback)
@@ -251,7 +270,7 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Open target vector layer",
+            "Open input vector layer",
             default_dir,
             "Vector data (*.gpkg *.shp *.geojson *.json *.kml *.sqlite *.tab *.gml *.dxf);;All files (*.*)",
         )
@@ -322,8 +341,94 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
             )
         else:
             self.extentHintLabel.setText(
-                "Analysis extent will follow the target layer extent after reprojection."
+                "Analysis extent will follow the input layer extent after reprojection."
             )
+
+    def update_target_crs_controls(self):
+        if not self._has_target_crs_controls():
+            return
+        is_manual = self.targetCrsModeCombo.currentIndex() == self.CRS_MODE_SELECTED
+        self.targetCrsBrowseButton.setEnabled(is_manual)
+        self.targetCrsLabel.setEnabled(is_manual)
+        self.targetCrsLineEdit.setEnabled(is_manual)
+        self.update_working_crs_info()
+
+    def choose_target_crs(self):
+        if not self._has_target_crs_controls():
+            return
+        dialog = QgsProjectionSelectionDialog(self)
+        current_crs = self._selected_target_crs()
+        if current_crs is not None and current_crs.isValid():
+            dialog.setCrs(current_crs)
+
+        if dialog.exec_() != QDialog.Accepted:
+            return
+
+        selected_crs = dialog.crs()
+        if not selected_crs.isValid():
+            return
+        if selected_crs.isGeographic():
+            QMessageBox.warning(
+                self,
+                "ProxiVec",
+                "Please choose a projected CRS with meter units.",
+            )
+            return
+
+        self.targetCrsModeCombo.setCurrentIndex(self.CRS_MODE_SELECTED)
+        self.targetCrsLineEdit.setText(self._crs_display(selected_crs))
+        settings = QgsSettings()
+        settings.setValue(self.SETTINGS_KEY_TARGET_CRS, selected_crs.authid())
+        self.update_working_crs_info()
+
+    def _selected_target_crs(self):
+        if not self._has_target_crs_controls():
+            return None
+        if self.targetCrsModeCombo.currentIndex() != self.CRS_MODE_SELECTED:
+            return None
+
+        crs_text = self.targetCrsLineEdit.text().strip()
+        if not crs_text:
+            return None
+
+        authid = crs_text.split(" ", 1)[0]
+        crs = QgsCoordinateReferenceSystem(authid)
+        return crs if crs.isValid() else None
+
+    def _load_saved_target_crs(self):
+        if not self._has_target_crs_controls():
+            return
+        settings = QgsSettings()
+        authid = settings.value(self.SETTINGS_KEY_TARGET_CRS, "", type=str)
+        if not authid:
+            return
+
+        crs = QgsCoordinateReferenceSystem(authid)
+        if crs.isValid():
+            self.targetCrsModeCombo.setCurrentIndex(self.CRS_MODE_SELECTED)
+            self.targetCrsLineEdit.setText(self._crs_display(crs))
+
+    @staticmethod
+    def _crs_display(crs):
+        if crs.authid():
+            return f"{crs.authid()} - {crs.description()}"
+        return crs.description()
+
+    def _has_target_crs_controls(self):
+        return all(
+            hasattr(self, attr)
+            for attr in ("targetCrsModeCombo", "targetCrsBrowseButton", "targetCrsLabel", "targetCrsLineEdit")
+        )
+
+    def _engine_kwargs(self, **kwargs):
+        try:
+            supported = set(inspect.signature(ProximityEngine.__init__).parameters)
+        except (TypeError, ValueError):
+            return kwargs
+
+        if "self" in supported:
+            supported.remove("self")
+        return {key: value for key, value in kwargs.items() if key in supported}
 
     def _selected_extent(self):
         mode = self._extent_mode()
@@ -389,3 +494,15 @@ class ProxiVecDialog(QDialog, FORM_CLASS):
 
     def _log(self, message, level=Qgis.Info):
         QgsMessageLog.logMessage(message, self.LOG_TAG, level)
+
+    def closeEvent(self, event):
+        project = QgsProject.instance()
+        try:
+            project.layersAdded.disconnect(self.refresh_layers)
+        except TypeError:
+            pass
+        try:
+            project.layersRemoved.disconnect(self.refresh_layers)
+        except TypeError:
+            pass
+        super().closeEvent(event)

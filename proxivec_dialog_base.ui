@@ -29,7 +29,7 @@
      <item row="0" column="0">
       <widget class="QLabel" name="targetLayerLabel">
        <property name="text">
-        <string>Target layer</string>
+        <string>Input layer</string>
        </property>
       </widget>
      </item>
@@ -50,7 +50,7 @@
      <item row="1" column="0">
       <widget class="QLabel" name="targetExpressionLabel">
        <property name="text">
-        <string>Target expression</string>
+        <string>Input expression</string>
        </property>
       </widget>
      </item>
@@ -72,7 +72,7 @@
       <widget class="QComboBox" name="extentModeCombo">
        <item>
         <property name="text">
-         <string>Target layer extent</string>
+         <string>Input layer extent</string>
         </property>
         <property name="userData" stdset="0">
          <string>target</string>
@@ -132,13 +132,62 @@
       </widget>
      </item>
      <item row="6" column="0">
+      <widget class="QLabel" name="targetCrsModeLabel">
+       <property name="text">
+        <string>Target CRS</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1">
+      <layout class="QHBoxLayout" name="horizontalLayoutTargetCrs">
+       <item>
+        <widget class="QComboBox" name="targetCrsModeCombo">
+         <item>
+          <property name="text">
+           <string>Auto-detect</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Select CRS...</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="targetCrsBrowseButton">
+         <property name="text">
+          <string>Browse...</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="targetCrsLabel">
+       <property name="text">
+        <string>Selected CRS</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QLineEdit" name="targetCrsLineEdit">
+       <property name="readOnly">
+        <bool>true</bool>
+       </property>
+       <property name="placeholderText">
+        <string>Auto-detect from project/input layer</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
       <widget class="QLabel" name="pixelSizeLabel">
        <property name="text">
         <string>Pixel size (meters)</string>
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
+     <item row="8" column="1">
       <widget class="QDoubleSpinBox" name="pixelSizeSpin">
        <property name="decimals">
         <number>3</number>
@@ -154,14 +203,14 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="0">
+     <item row="9" column="0">
       <widget class="QLabel" name="maxDistanceLabel">
        <property name="text">
         <string>Max distance (meters)</string>
        </property>
       </widget>
      </item>
-     <item row="7" column="1">
+     <item row="9" column="1">
       <layout class="QHBoxLayout" name="horizontalLayoutMaxDistance">
        <item>
         <widget class="QCheckBox" name="maxDistanceCheck">
@@ -188,14 +237,14 @@
        </item>
       </layout>
      </item>
-     <item row="8" column="0">
+     <item row="10" column="0">
       <widget class="QLabel" name="outputPathLabel">
        <property name="text">
         <string>Output raster</string>
        </property>
       </widget>
      </item>
-     <item row="8" column="1">
+     <item row="10" column="1">
       <layout class="QHBoxLayout" name="horizontalLayoutOutputPath">
        <item>
         <widget class="QLineEdit" name="outputPathEdit">
@@ -218,7 +267,7 @@
    <item>
     <widget class="QCheckBox" name="targetSelectedCheck">
      <property name="text">
-      <string>Use selected features only (target layer)</string>
+      <string>Use selected features only (input layer)</string>
      </property>
     </widget>
    </item>
@@ -242,7 +291,7 @@
    <item>
     <widget class="QLabel" name="extentHintLabel">
      <property name="text">
-      <string>The analysis extent will follow the target layer extent after reprojection.</string>
+      <string>The analysis extent will follow the input layer extent after reprojection.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -258,7 +307,7 @@
       <item>
        <widget class="QLabel" name="crsInfoLabel">
         <property name="text">
-         <string>Select a target layer to preview the working CRS.</string>
+         <string>Select an input layer to preview the working CRS.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
@@ -278,14 +327,15 @@
        <widget class="QLabel" name="helpLabel">
         <property name="text">
          <string>Quick guide:
-- Select a target vector layer and optional filter.
+- Select an input vector layer and optional filter.
 - Choose analysis extent (target/canvas/layer/polygon bbox).
+- Optionally choose a target CRS, otherwise ProxiVec auto-detects one.
 - Set pixel size and max distance in meters.
 - Save output as GeoTIFF and click Run.
 
 Notes:
 - Distance values are computed in meters.
-- If target CRS is geographic, ProxiVec reprojects to a projected working CRS.</string>
+- If the input CRS is geographic, ProxiVec reprojects to a projected working CRS.</string>
         </property>
         <property name="wordWrap">
          <bool>true</bool>
