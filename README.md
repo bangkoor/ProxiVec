@@ -99,5 +99,5 @@ If “Load output raster into the project after completion” is enabled, the re
 
 ## License
 
-Add your preferred license here (e.g., GPL-2.0-or-later to match common QGIS plugin licensing).
+GNU GENERAL PUBLIC LICENSE
 
