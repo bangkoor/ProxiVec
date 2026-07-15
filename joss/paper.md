@@ -9,7 +9,7 @@ tags:
   - distance
   - GDAL
 authors:
-  - name: Arif K Wijayanto
+  - name: Arif Kurnia Wijayanto
     orcid: 0000-0003-4581-6065
     affiliation: 1
 affiliations:
