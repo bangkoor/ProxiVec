@@ -99,5 +99,4 @@ If “Load output raster into the project after completion” is enabled, the re
 
 ## License
 
-GNU GENERAL PUBLIC LICENSE
-
+ProxiVec is released under the GNU General Public License v2.0 or later (GPL-2.0-or-later). See [LICENSE](LICENSE).
